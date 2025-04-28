@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>โปรแกรมบันทึกรายรับรายจ่าย</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f5f5f5;
+            padding-top: 20px;
+            padding-bottom: 40px;
+        }
+        .app-container {
+            max-width: 950px;
+            margin: 0 auto 20px auto;
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        h2 {
+            color: #3498db;
+            font-size: 22px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .form-label {
+            font-weight: 500;
+        }
+        .summary-box {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .income {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .expense {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .balance {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .balance.positive {
+            color: #28a745;
+        }
+        .balance.negative {
+            color: #dc3545;
+        }
+        .transaction-item {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s;
+        }
+        .transaction-item:hover {
+            background-color: #f8f9fa;
+        }
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+        .transaction-date {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        .transaction-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+        .category-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            color: white;
+            background-color: #6c757d;
+        }
+        .category-อาหาร { background-color: #e74c3c; }
+        .category-การเดินทาง { background-color: #3498db; }
+        .category-ที่พัก { background-color: #9b59b6; }
+        .category-บันเทิง { background-color: #f1c40f; }
+        .category-ช้อปปิ้ง { background-color: #e67e22; }
+        .category-สุขภาพ { background-color: #2ecc71; }
+        .category-การศึกษา { background-color: #1abc9c; }
+        .category-อื่นๆ { background-color: #95a5a6; }
+        
+        .category-เงินเดือน { background-color: #27ae60; }
+        .category-โบนัส { background-color: #2ecc71; }
+        .category-ของขวัญ { background-color: #16a085; }
+        .category-การลงทุน { background-color: #2980b9; }
+        .category-รายได้เสริม { background-color: #3498db; }
+        
+        .delete-btn {
+            cursor: pointer;
+            color: #dc3545;
+        }
+        .delete-btn:hover {
+            color: #bd2130;
+        }
+        
+        .nav-tabs .nav-link {
+            color: #495057;
+        }
+        .nav-tabs .nav-link.active {
+            color: #3498db;
+            font-weight: bold;
+        }
+        
+        .monthly-summary-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .monthly-summary-table th,
+        .monthly-summary-table td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+        }
+        .monthly-summary-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .monthly-summary-table .month-name {
+            text-align: left;
+            font-weight: bold;
+        }
+        .monthly-summary-table .month-income {
+            color: #28a745;
+        }
+        .monthly-summary-table .month-expense {
+            color: #dc3545;
+        }
+        .monthly-summary-table .month-balance.positive {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .monthly-summary-table .month-balance.negative {
+            color: #dc3545;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="app-container">
+            <h1>โปรแกรมบันทึกรายรับรายจ่าย</h1>
+            
+            <!-- สรุปรายรับรายจ่าย -->
+            <div class="summary-box">
+                <div class="row">
+                    <div class="col-md-4 text-center">
+                        <p>รายรับทั้งหมด</p>
+                        <h3 class="income" id="total-income">฿0.00</h3>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <p>รายจ่ายทั้งหมด</p>
+                        <h3 class="expense" id="total-expense">฿0.00</h3>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <p>คงเหลือ</p>
+                        <h3 class="balance" id="balance">฿0.00</h3>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- แท็บเมนู -->
+            <ul class="nav nav-tabs mb-4" id="myTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="transactions-tab" data-bs-toggle="tab" data-bs-target="#transactions" type="button" role="tab" aria-controls="transactions" aria-selected="true">รายการ</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="monthly-tab" data-bs-toggle="tab" data-bs-target="#monthly" type="button" role="tab" aria-controls="monthly" aria-selected="false">สรุปรายเดือน</button>
+                </li>
+            </ul>
+            
+            <!-- เนื้อหาแท็บ -->
+            <div class="tab-content" id="myTabContent">
+                <!-- แท็บรายการ -->
+                <div class="tab-pane fade show active" id="transactions" role="tabpanel" aria-labelledby="transactions-tab">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h2>เพิ่มรายการใหม่</h2>
+                            <form id="transaction-form">
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">รายละเอียด</label>
+                                    <input type="text" class="form-control" id="description" placeholder="ระบุรายละเอียด" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="amount" class="form-label">จำนวนเงิน (บาท)</label>
+                                    <input type="number" class="form-control" id="amount" placeholder="0.00" step="0.01" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="date" class="form-label">วันที่</label>
+                                    <input type="date" class="form-control" id="date" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">ประเภทรายการ</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="type" id="income" value="income" checked>
+                                        <label class="form-check-label" for="income">
+                                            รายรับ
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="type" id="expense" value="expense">
+                                        <label class="form-check-label" for="expense">
+                                            รายจ่าย
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="category" class="form-label">หมวดหมู่</label>
+                                    <select class="form-select" id="category">
+                                        <!-- หมวดหมู่จะเปลี่ยนตามประเภทรายการ (รายรับ/รายจ่าย) -->
+                                        <option value="เงินเดือน">เงินเดือน</option>
+                                        <option value="โบนัส">โบนัส</option>
+                                        <option value="ของขวัญ">ของขวัญ</option>
+                                        <option value="การลงทุน">การลงทุน</option>
+                                        <option value="รายได้เสริม">รายได้เสริม</option>
+                                        <option value="อื่นๆ">อื่นๆ</option>
+                                    </select>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary w-100">เพิ่มรายการ</button>
+                            </form>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h2>รายการล่าสุด</h2>
+                            <div class="transaction-list" id="transaction-list">
+                                <!-- รายการจะถูกเพิ่มเข้ามาที่นี่ด้วย JavaScript -->
+                                <div class="text-center p-4 text-muted">
+                                    ยังไม่มีรายการ
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- แท็บสรุปรายเดือน -->
+                <div class="tab-pane fade" id="monthly" role="tabpanel" aria-labelledby="monthly-tab">
+                    <h2>สรุปรายการตามเดือน</h2>
+                    <div id="monthly-summary">
+                        <div class="table-responsive">
+                            <table class="monthly-summary-table">
+                                <thead>
+                                    <tr>
+                                        <th>เดือน/ปี</th>
+                                        <th>รายรับ</th>
+                                        <th>รายจ่าย</th>
+                                        <th>คงเหลือ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="monthly-summary-body">
+                                    <!-- ข้อมูลจะถูกเพิ่มที่นี่ด้วย JavaScript -->
+                                    <tr>
+                                        <td colspan="4" class="text-center p-4 text-muted">ยังไม่มีข้อมูล</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4">
+            <p class="text-muted">สร้างโดย: PanuwongK</p>
+            <p class="text-muted small">เวอร์ชัน 1.0 | ฟรีสำหรับทุกคน</p>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // ตั้งค่าวันที่ปัจจุบันในฟอร์ม
+        document.getElementById('date').valueAsDate = new Date();
+        
+        // ฟังก์ชันเริ่มต้นโปรแกรม
+        function initApp() {
+            // โหลดข้อมูลจาก localStorage
+            loadTransactions();
+            
+            // ตั้งค่า event listener สำหรับฟอร์ม
+            document.getElementById('transaction-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                addTransaction();
+            });
+            
+            // เปลี่ยนหมวดหมู่เมื่อเลือกประเภทรายการ
+            document.querySelector('input[name="type"]').addEventListener('change', updateCategories);
+            document.querySelectorAll('input[name="type"]').forEach(input => {
+                input.addEventListener('change', updateCategories);
+            });
+            
+            // อัพเดทสรุปรายเดือน
+            updateMonthlySummary();
+            
+            // อัพเดทหมวดหมู่ครั้งแรก
+            updateCategories();
+        }
+        
+        // อัพเดทหมวดหมู่ตามประเภทรายการ
+        function updateCategories() {
+            const type = document.querySelector('input[name="type"]:checked').value;
+            const categorySelect = document.getElementById('category');
+            
+            // ล้างตัวเลือกเดิม
+            categorySelect.innerHTML = '';
+            
+            if (type === 'income') {
+                // หมวดหมู่รายรับ
+                const incomeCategories = ['เงินเดือน', 'โบนัส', 'ของขวัญ', 'การลงทุน', 'รายได้เสริม', 'อื่นๆ'];
+                incomeCategories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category;
+                    option.textContent = category;
+                    categorySelect.appendChild(option);
+                });
+            } else {
+                // หมวดหมู่รายจ่าย
+                const expenseCategories = ['อาหาร', 'การเดินทาง', 'ที่พัก', 'บันเทิง', 'ช้อปปิ้ง', 'สุขภาพ', 'การศึกษา', 'อื่นๆ'];
+                expenseCategories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category;
+                    option.textContent = category;
+                    categorySelect.appendChild(option);
+                });
+            }
+        }
+        
+        // เพิ่มรายการใหม่
+        function addTransaction() {
+            const description = document.getElementById('description').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const date = document.getElementById('date').value;
+            const type = document.querySelector('input[name="type"]:checked').value;
+            const category = document.getElementById('category').value;
+            
+            if (description.trim() === '' || isNaN(amount) || amount <= 0) {
+                alert('กรุณากรอกข้อมูลให้ถูกต้องและครบถ้วน');
+                return;
+            }
+            
+            const transaction = {
+                id: Date.now(),
+                description,
+                amount,
+                date,
+                type,
+                category
+            };
+            
+            // เพิ่มรายการลงใน localStorage
+            const transactions = getTransactionsFromStorage();
+            transactions.push(transaction);
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+            
+            // รีเซ็ตฟอร์ม
+            document.getElementById('description').value = '';
+            document.getElementById('amount').value = '';
+            document.getElementById('date').valueAsDate = new Date();
+            
+            // อัพเดทรายการและสรุป
+            loadTransactions();
+            
+            // อัพเดทสรุปรายเดือน
+            updateMonthlySummary();
+        }
+        
+        // ลบรายการ
+        function deleteTransaction(id) {
+            if (confirm('คุณต้องการลบรายการนี้ใช่หรือไม่?')) {
+                let transactions = getTransactionsFromStorage();
+                transactions = transactions.filter(transaction => transaction.id !== id);
+                localStorage.setItem('transactions', JSON.stringify(transactions));
+                
+                // อัพเดทรายการและสรุป
+                loadTransactions();
+                
+                // อัพเดทสรุปรายเดือน
+                updateMonthlySummary();
+            }
+        }
+        
+        // โหลดรายการทั้งหมดและแสดงผล
+        function loadTransactions() {
+            const transactionList = document.getElementById('transaction-list');
+            const transactions = getTransactionsFromStorage();
+            
+            // คำนวณยอดรวม
+            let totalIncome = 0;
+            let totalExpense = 0;
+            
+            transactions.forEach(transaction => {
+                if (transaction.type === 'income') {
+                    totalIncome += transaction.amount;
+                } else {
+                    totalExpense += transaction.amount;
+                }
+            });
+            
+            const balance = totalIncome - totalExpense;
+            
+            // แสดงสรุป
+            document.getElementById('total-income').textContent = `฿${totalIncome.toFixed(2)}`;
+            document.getElementById('total-expense').textContent = `฿${totalExpense.toFixed(2)}`;
+            
+            const balanceElement = document.getElementById('balance');
+            balanceElement.textContent = `฿${balance.toFixed(2)}`;
+            
+            if (balance >= 0) {
+                balanceElement.classList.remove('negative');
+                balanceElement.classList.add('positive');
+            } else {
+                balanceElement.classList.remove('positive');
+                balanceElement.classList.add('negative');
+            }
+            
+            // แสดงรายการ
+            if (transactions.length === 0) {
+                transactionList.innerHTML = `
+                    <div class="text-center p-4 text-muted">
+                        ยังไม่มีรายการ
+                    </div>
+                `;
+                return;
+            }
+            
+            // เรียงลำดับรายการตามวันที่ (ล่าสุดอยู่บนสุด)
+            transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            // แสดงเฉพาะ 10 รายการล่าสุด
+            const recentTransactions = transactions.slice(0, 10);
+            
+            transactionList.innerHTML = '';
+            
+            recentTransactions.forEach(transaction => {
+                const formattedDate = new Date(transaction.date).toLocaleDateString('th-TH', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                
+                const transactionItem = document.createElement('div');
+                transactionItem.className = 'transaction-item';
+                
+                transactionItem.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold">${transaction.description}</div>
+                            <div class="transaction-date">${formattedDate}</div>
+                            <span class="category-tag category-${transaction.category}">${transaction.category}</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span class="${transaction.type === 'income' ? 'income' : 'expense'} me-3">
+                                ${transaction.type === 'income' ? '+' : '-'}฿${transaction.amount.toFixed(2)}
+                            </span>
+                            <span class="delete-btn" onclick="deleteTransaction(${transaction.id})">
+                                <i class="fas fa-trash"></i> ลบ
+                            </span>
+                        </div>
+                    </div>
+                `;
+                
+                transactionList.appendChild(transactionItem);
+            });
+        }
+        
+        // อัพเดทสรุปรายเดือน
+        function updateMonthlySummary() {
+            const transactions = getTransactionsFromStorage();
+            const summaryBody = document.getElementById('monthly-summary-body');
+            
+            if (transactions.length === 0) {
+                summaryBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center p-4 text-muted">ยังไม่มีข้อมูล</td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            // จัดกลุ่มข้อมูลตามเดือน/ปี
+            const monthlySummary = {};
+            
+            transactions.forEach(transaction => {
+                const date = new Date(transaction.date);
+                const year = date.getFullYear();
+                const month = date.getMonth();
+                
+                // สร้างคีย์สำหรับเดือน/ปี (e.g., "2023-5" for May 2023)
+                const monthKey = `${year}-${month}`;
+                
+                if (!monthlySummary[monthKey]) {
+                    monthlySummary[monthKey] = {
+                        year,
+                        month,
+                        income: 0,
+                        expense: 0
+                    };
+                }
+                
+                if (transaction.type === 'income') {
+                    monthlySummary[monthKey].income += transaction.amount;
+                } else {
+                    monthlySummary[monthKey].expense += transaction.amount;
+                }
+            });
+            
+            // แปลงเป็นอาร์เรย์และเรียงตามวันที่ (ล่าสุดอยู่บนสุด)
+            const monthlyData = Object.values(monthlySummary).sort((a, b) => {
+                if (a.year !== b.year) {
+                    return b.year - a.year;
+                }
+                return b.month - a.month;
+            });
+            
+            // สร้าง HTML สำหรับตาราง
+            summaryBody.innerHTML = '';
+            
+            monthlyData.forEach(data => {
+                const balance = data.income - data.expense;
+                const isPositive = balance >= 0;
+                
+                // แปลงเดือนเป็นข้อความภาษาไทย
+                const monthNames = [
+                    'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                    'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+                ];
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="month-name">${monthNames[data.month]} ${data.year}</td>
+                    <td class="month-income">฿${data.income.toFixed(2)}</td>
+                    <td class="month-expense">฿${data.expense.toFixed(2)}</td>
+                    <td class="month-balance ${isPositive ? 'positive' : 'negative'}">฿${balance.toFixed(2)}</td>
+                `;
+                
+                summaryBody.appendChild(row);
+            });
+        }
+        
+        // ดึงรายการจาก localStorage
+        function getTransactionsFromStorage() {
+            const transactions = localStorage.getItem('transactions');
+            return transactions ? JSON.parse(transactions) : [];
+        }
+        
+        // เริ่มต้นโปรแกรม
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
